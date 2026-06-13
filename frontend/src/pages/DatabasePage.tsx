@@ -74,6 +74,11 @@ function DatabasePage() {
   const [editImage, setEditImage] = useState<File | null>(null)
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
 
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const [showPwdModal, setShowPwdModal] = useState<boolean>(false)
+  const [pwdInput, setPwdInput] = useState<string>('')
+  const [pwdError, setPwdError] = useState<string | null>(null)
+
   const imageUrlRef = useRef<string | null>(null)
   const importFileRef = useRef<HTMLInputElement>(null)
 
@@ -201,6 +206,27 @@ function DatabasePage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Export failed')
     }
+  }
+
+  const handleAdminLogin = () => {
+    if (pwdInput === 'Xihu@323') {
+      setIsAdmin(true)
+      setShowPwdModal(false)
+      setPwdInput('')
+      setPwdError(null)
+    } else {
+      setPwdError('Incorrect password')
+    }
+  }
+
+  const handleLogout = () => {
+    setIsAdmin(false)
+  }
+
+  const openAdminModal = () => {
+    setPwdInput('')
+    setPwdError(null)
+    setShowPwdModal(true)
   }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -523,7 +549,7 @@ function DatabasePage() {
                         Cancel
                       </button>
                     </div>
-                  ) : (
+                  ) : isAdmin ? (
                     <button
                       className="delete-btn"
                       onClick={(e) => {
@@ -533,7 +559,7 @@ function DatabasePage() {
                     >
                       Delete
                     </button>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -678,12 +704,16 @@ function DatabasePage() {
             style={{ display: 'none' }}
             onChange={handleImport}
           />
-          <button className="action-btn" onClick={handleExport}>
-            Export Data
-          </button>
-          <button className="action-btn" onClick={() => importFileRef.current?.click()}>
-            Import Data
-          </button>
+          {isAdmin && (
+            <>
+              <button className="action-btn" onClick={handleExport}>
+                Export Data
+              </button>
+              <button className="action-btn" onClick={() => importFileRef.current?.click()}>
+                Import Data
+              </button>
+            </>
+          )}
           <button className="process-btn" onClick={() => setShowModal(true)}>
             Upload Data
           </button>
@@ -703,6 +733,13 @@ function DatabasePage() {
             {tab.label}
           </button>
         ))}
+        <button
+          className={`admin-lock-btn${isAdmin ? ' unlocked' : ''}`}
+          onClick={isAdmin ? handleLogout : openAdminModal}
+          title={isAdmin ? 'Admin mode — click to exit' : 'Click to unlock admin mode'}
+        >
+          {isAdmin ? '🔓' : '🔒'}
+        </button>
       </div>
 
       {error && <div className="error-msg">{error}</div>}
@@ -749,9 +786,9 @@ function DatabasePage() {
                   <button className="save-btn" onClick={handleSaveEdit} disabled={saving}>
                     {saving ? 'Saving...' : 'Save'}
                   </button>
-                ) : (
+                ) : isAdmin ? (
                   <button className="edit-btn" onClick={startEditing}>Edit</button>
-                )}
+                ) : null}
                 <button className="close-btn" onClick={closeDetail}>Close</button>
               </div>
             </div>
@@ -948,6 +985,32 @@ function DatabasePage() {
                 className="process-btn"
               >
                 {uploading ? 'Uploading...' : 'Confirm Upload'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showPwdModal && (
+        <div className="modal-overlay" onClick={() => setShowPwdModal(false)}>
+          <div className="modal-content admin-pwd-modal" onClick={e => e.stopPropagation()}>
+            <h2>Admin Access</h2>
+            <p className="admin-pwd-hint">Enter the administrator password to unlock all features.</p>
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                value={pwdInput}
+                onChange={(e) => setPwdInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAdminLogin() }}
+                autoFocus
+                placeholder="Enter password"
+              />
+            </div>
+            {pwdError && <div className="error-msg" style={{ marginTop: 8 }}>{pwdError}</div>}
+            <div className="modal-actions" style={{ marginTop: 16 }}>
+              <button className="cancel-btn" onClick={() => setShowPwdModal(false)}>Cancel</button>
+              <button className="process-btn" onClick={handleAdminLogin} disabled={!pwdInput.trim()}>
+                Unlock
               </button>
             </div>
           </div>

@@ -1,0 +1,13 @@
+node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.idea/
+.vscode/
+*.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+ReferenceCode/

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pathlib import Path
 from services.database import init_db
 
@@ -30,5 +30,11 @@ app.include_router(calculator.router)
 app.include_router(database.router)
 
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+
 if frontend_dist.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str, request: Request):
+        file_path = frontend_dist / full_path
+        if full_path and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(frontend_dist / "index.html")

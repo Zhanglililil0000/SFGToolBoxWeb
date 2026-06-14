@@ -92,7 +92,9 @@ else
         --enable-shared \
         --with-system-ffi \
         --with-ensurepip=install \
-        LDFLAGS="-Wl,-rpath /usr/local/lib"
+        --with-openssl=/usr \
+        CPPFLAGS="-I/usr/include/openssl" \
+        LDFLAGS="-Wl,-rpath /usr/local/lib -L/usr/lib64"
 
     make -j"$(nproc)"
     make altinstall

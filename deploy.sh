@@ -115,14 +115,14 @@ echo ""
 # ──────────────────────────────────────────────
 if [ "$IS_UPDATE" = false ]; then
 
-echo "[3/6] Installing Node.js 20..."
+echo "[3/6] Installing Node.js 16..."
 if command -v node &> /dev/null; then
     NODE_VER=$(node --version)
     echo "  -> Node.js already installed: $NODE_VER"
 else
-    curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+    curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
     yum install -y nodejs
-    echo "  -> Node.js 20 installed"
+    echo "  -> Node.js 16 installed"
 fi
 node --version
 npm --version

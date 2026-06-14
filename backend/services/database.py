@@ -94,12 +94,12 @@ def delete_record(record_id: int):
 def update_record(record_id: int, data: dict):
     conn = sqlite3.connect(DB_PATH)
 
-    row = conn.execute('SELECT * FROM records WHERE id = ?', (record_id,)).fetchone()
+    row = conn.execute('SELECT image_path FROM records WHERE id = ?', (record_id,)).fetchone()
     if not row:
         conn.close()
         raise ValueError("Record not found")
 
-    dict_row = dict(row)
+    old_image_path = row[0]
 
     fields = [
         'name', 'formula', 'normalized_intensity', 'effective_chi2',
@@ -115,8 +115,8 @@ def update_record(record_id: int, data: dict):
             updates.append(f"{field} = ?")
             values.append(data[field])
 
-    if 'image_path' in data and dict_row.get('image_path') and data['image_path'] != dict_row['image_path']:
-        old_img = os.path.join(UPLOAD_DIR, dict_row['image_path'])
+    if 'image_path' in data and old_image_path and data['image_path'] != old_image_path:
+        old_img = os.path.join(UPLOAD_DIR, old_image_path)
         if os.path.exists(old_img):
             os.remove(old_img)
 

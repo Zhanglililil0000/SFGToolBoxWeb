@@ -28,11 +28,16 @@ def init_db():
             reference TEXT,
             image_path TEXT,
             uploader TEXT,
+            polarization TEXT,
             created_at TEXT
         )
     ''')
     try:
         conn.execute('ALTER TABLE records ADD COLUMN uploader TEXT')
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute('ALTER TABLE records ADD COLUMN polarization TEXT')
     except sqlite3.OperationalError:
         pass
     conn.commit()
@@ -53,8 +58,8 @@ def add_record(data: dict):
     conn.execute('''
         INSERT INTO records (name, formula, normalized_intensity, effective_chi2,
             peak_position, peak_width, vibrational_mode, functional_group,
-            vis_angle, ir_angle, laser_energy, instrument, reference, image_path, uploader, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            vis_angle, ir_angle, laser_energy, instrument, reference, image_path, uploader, polarization, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         data['name'], data.get('formula'), data.get('normalized_intensity'),
         data.get('effective_chi2'), data.get('peak_position'), data.get('peak_width'),
@@ -62,6 +67,7 @@ def add_record(data: dict):
         data.get('vis_angle'), data.get('ir_angle'), data.get('laser_energy'),
         data.get('instrument'), data.get('reference'), data.get('image_path'),
         data.get('uploader'),
+        data.get('polarization'),
         now
     ))
     conn.commit()
@@ -95,7 +101,7 @@ def update_record(record_id: int, data: dict):
         'name', 'formula', 'normalized_intensity', 'effective_chi2',
         'peak_position', 'peak_width', 'vibrational_mode', 'functional_group',
         'vis_angle', 'ir_angle', 'laser_energy', 'instrument', 'reference',
-        'uploader', 'image_path'
+        'uploader', 'polarization', 'image_path'
     ]
 
     updates = []

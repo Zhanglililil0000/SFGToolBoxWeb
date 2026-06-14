@@ -84,6 +84,7 @@ FIELD_MAP = {
     'Visible Incident Angle': 'vis_angle', 'IR Incident Angle': 'ir_angle',
     'Laser Energy': 'laser_energy', 'Instrument': 'instrument',
     'Reference': 'reference', 'Uploader': 'uploader',
+    'Polarization': 'polarization',
 }
 
 FIELD_MAP_CN = {
@@ -93,6 +94,7 @@ FIELD_MAP_CN = {
     '可见入射角': 'vis_angle', '红外入射角': 'ir_angle',
     '实验能量': 'laser_energy', '测试仪器': 'instrument',
     '相关文献': 'reference', '上传者': 'uploader',
+    '偏振': 'polarization',
 }
 
 ALL_FIELD_MAP = {**FIELD_MAP, **FIELD_MAP_CN}

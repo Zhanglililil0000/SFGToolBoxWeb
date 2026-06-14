@@ -167,7 +167,8 @@
   font-weight: 500;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   padding: 10px 14px;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -177,9 +178,11 @@
   outline: none;
   transition: border-color 0.2s;
   font-family: var(--font-body);
+  width: 100%;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   border-color: var(--color-primary);
 }
 
@@ -341,6 +344,48 @@
 
 .intensity-filter .form-group input:focus {
   border-color: var(--color-primary);
+}
+
+.polarization-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pol-chip {
+  padding: 6px 16px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  font-family: var(--font-body);
+}
+
+.pol-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.pol-chip.active {
+  background: rgba(233, 69, 96, 0.15);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pol-clear {
+  border-color: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.pol-clear:hover {
+  border-color: var(--color-border);
+  color: var(--color-text);
 }
 
 .chart-container {
@@ -734,6 +779,8 @@
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.2s;
+  font-family: var(--font-body);
+  width: 100%;
 }
 
 .detail-field-input:focus {

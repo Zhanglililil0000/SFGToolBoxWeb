@@ -8,6 +8,8 @@ const TABS = [
   { key: 'spectrum', label: 'Spectrum View' },
 ] as const
 
+const POLARIZATIONS = ['SSP', 'PPP', 'SPS', 'PSS', 'PSP', 'SPP', 'PPS'] as const
+
 type TabKey = typeof TABS[number]['key']
 
 interface SFGRecord {
@@ -27,6 +29,7 @@ interface SFGRecord {
   reference?: string
   image_path?: string
   uploader?: string
+  polarization?: string
   created_at?: string
 }
 
@@ -53,6 +56,7 @@ function DatabasePage() {
   const [instrument, setInstrument] = useState<string>('')
   const [reference, setReference] = useState<string>('')
   const [uploader, setUploader] = useState<string>('')
+  const [polarization, setPolarization] = useState<string>('')
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -65,6 +69,7 @@ function DatabasePage() {
   const [yMax, setYMax] = useState<string>('')
   const [intensityMin, setIntensityMin] = useState<string>('')
   const [intensityMax, setIntensityMax] = useState<string>('')
+  const [polarizationFilter, setPolarizationFilter] = useState<Set<string>>(new Set())
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
 
   const [detailRecord, setDetailRecord] = useState<SFGRecord | null>(null)
@@ -116,6 +121,7 @@ function DatabasePage() {
     setInstrument('')
     setReference('')
     setUploader('')
+    setPolarization('')
     setSelectedImage(null)
     if (imageUrlRef.current) {
       URL.revokeObjectURL(imageUrlRef.current)
@@ -166,6 +172,7 @@ function DatabasePage() {
       if (instrument.trim()) data.instrument = instrument.trim()
       if (reference.trim()) data.reference = reference.trim()
       if (uploader.trim()) data.uploader = uploader.trim()
+      if (polarization.trim()) data.polarization = polarization.trim()
 
       const formData = new FormData()
       formData.append('data', JSON.stringify(data))
@@ -221,6 +228,18 @@ function DatabasePage() {
 
   const handleLogout = () => {
     setIsAdmin(false)
+  }
+
+  const togglePolarizationFilter = (pol: string) => {
+    setPolarizationFilter((prev) => {
+      const next = new Set(prev)
+      if (next.has(pol)) {
+        next.delete(pol)
+      } else {
+        next.add(pol)
+      }
+      return next
+    })
   }
 
   const openAdminModal = () => {
@@ -360,6 +379,28 @@ function DatabasePage() {
 
     if (showAsEmpty) return null
 
+    if (field === 'polarization') {
+      return (
+        <div className="detail-field">
+          <label className="detail-field-label">{label}</label>
+          {editingRecord ? (
+            <select
+              className="detail-field-input"
+              value={String((editingRecord as unknown as Record<string, unknown>)[field] ?? '')}
+              onChange={(e) => handleEditFieldChange(field, e.target.value)}
+            >
+              <option value="">-- Select --</option>
+              {POLARIZATIONS.map((pol) => (
+                <option key={pol} value={pol}>{pol}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="detail-field-value">{String(value ?? '')}</span>
+          )}
+        </div>
+      )
+    }
+
     return (
       <div className="detail-field">
         <label className="detail-field-label">{label}</label>
@@ -389,6 +430,10 @@ function DatabasePage() {
       if (intensityMax.trim() && val > Number(intensityMax)) return false
       return true
     })
+    .filter((r) => {
+      if (polarizationFilter.size === 0) return true
+      return r.polarization ? polarizationFilter.has(r.polarization) : false
+    })
     .sort((a, b) => (b[sortMetric] ?? 0) - (a[sortMetric] ?? 0))
 
   const maxMetricValue = sortedIntensity.length > 0
@@ -415,6 +460,10 @@ function DatabasePage() {
 
   const spectrumData = records
     .filter((r) => r.peak_position != null && r.normalized_intensity != null)
+    .filter((r) => {
+      if (polarizationFilter.size === 0) return true
+      return r.polarization ? polarizationFilter.has(r.polarization) : false
+    })
     .map((r) => ({
       peak_position: r.peak_position ?? 0,
       normalized_intensity: r.normalized_intensity ?? 0,
@@ -452,8 +501,29 @@ function DatabasePage() {
         </div>
       </div>
 
+      <div className="polarization-filter">
+        {POLARIZATIONS.map((pol) => (
+          <span
+            key={pol}
+            className={`pol-chip${polarizationFilter.has(pol) ? ' active' : ''}`}
+            onClick={() => togglePolarizationFilter(pol)}
+          >
+            {pol}
+          </span>
+        ))}
+        {polarizationFilter.size > 0 && (
+          <span className="pol-chip pol-clear" onClick={() => setPolarizationFilter(new Set())}>
+            Clear
+          </span>
+        )}
+      </div>
+
       {sortedIntensity.length === 0 ? (
-        <div className="empty-state">No data</div>
+        <div className="empty-state">
+          {polarizationFilter.size > 0 || intensityMin.trim() || intensityMax.trim()
+            ? 'No data matching filters'
+            : 'No data'}
+        </div>
       ) : (
         <div className="chart-container">
           <ResponsiveContainer width="100%" height={Math.max(400, sortedIntensity.length * 28)}>
@@ -594,6 +664,12 @@ function DatabasePage() {
                     <span>{record.vibrational_mode}</span>
                   </span>
                 )}
+                {record.polarization && (
+                  <span className="db-card-field">
+                    <span className="db-card-field-label">Polarization:</span>
+                    <span>{record.polarization}</span>
+                  </span>
+                )}
               </div>
 
             </div>
@@ -633,6 +709,23 @@ function DatabasePage() {
         >
           Apply
         </button>
+      </div>
+
+      <div className="polarization-filter">
+        {POLARIZATIONS.map((pol) => (
+          <span
+            key={pol}
+            className={`pol-chip${polarizationFilter.has(pol) ? ' active' : ''}`}
+            onClick={() => togglePolarizationFilter(pol)}
+          >
+            {pol}
+          </span>
+        ))}
+        {polarizationFilter.size > 0 && (
+          <span className="pol-chip pol-clear" onClick={() => setPolarizationFilter(new Set())}>
+            Clear
+          </span>
+        )}
       </div>
 
       {spectrumData.length === 0 ? (
@@ -800,6 +893,7 @@ function DatabasePage() {
                 {renderDetailField('peak_position', 'Peak Position (cm⁻¹)', 'number', false)}
                 {renderDetailField('peak_width', 'Peak Width (cm⁻¹)', 'number', false)}
                 {renderDetailField('vibrational_mode', 'Vibrational Mode', 'text', false)}
+                {renderDetailField('polarization', 'Polarization', 'text', false)}
                 {renderDetailField('functional_group', 'Functional Group', 'text', false)}
                 {renderDetailField('vis_angle', 'Visible Incident Angle (°)', 'number', false)}
                 {renderDetailField('ir_angle', 'IR Incident Angle (°)', 'number', false)}
@@ -955,6 +1049,18 @@ function DatabasePage() {
                     value={uploader}
                     onChange={(e) => setUploader(e.target.value)}
                   />
+                </div>
+                <div className="form-group">
+                  <label>Polarization</label>
+                  <select
+                    value={polarization}
+                    onChange={(e) => setPolarization(e.target.value)}
+                  >
+                    <option value="">-- Select --</option>
+                    {POLARIZATIONS.map((pol) => (
+                      <option key={pol} value={pol}>{pol}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

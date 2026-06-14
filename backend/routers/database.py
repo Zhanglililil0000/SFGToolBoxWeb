@@ -5,10 +5,24 @@ from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse
+from pydantic import BaseModel
 
 from services.database import get_all_records, add_record, update_record, delete_record, save_image, UPLOAD_DIR
 
 router = APIRouter(prefix="/api/database", tags=["database"])
+
+ADMIN_PASSWORD = "Xihu@323"
+
+
+class AdminAuthRequest(BaseModel):
+    password: str
+
+
+@router.post("/admin/auth")
+async def admin_auth(body: AdminAuthRequest):
+    if body.password == ADMIN_PASSWORD:
+        return {"success": True}
+    raise HTTPException(status_code=401, detail="Incorrect password")
 
 
 @router.get("/records")

@@ -83,6 +83,7 @@ function DatabasePage() {
   const [showPwdModal, setShowPwdModal] = useState<boolean>(false)
   const [pwdInput, setPwdInput] = useState<string>('')
   const [pwdError, setPwdError] = useState<string | null>(null)
+  const [authLoading, setAuthLoading] = useState<boolean>(false)
 
   const imageUrlRef = useRef<string | null>(null)
   const importFileRef = useRef<HTMLInputElement>(null)
@@ -215,14 +216,28 @@ function DatabasePage() {
     }
   }
 
-  const handleAdminLogin = () => {
-    if (pwdInput === 'Xihu@323') {
-      setIsAdmin(true)
-      setShowPwdModal(false)
-      setPwdInput('')
-      setPwdError(null)
-    } else {
-      setPwdError('Incorrect password')
+  const handleAdminLogin = async () => {
+    setPwdError(null)
+    setAuthLoading(true)
+    try {
+      const res = await fetch('/api/database/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwdInput }),
+      })
+      if (res.ok) {
+        setIsAdmin(true)
+        setShowPwdModal(false)
+        setPwdInput('')
+      } else if (res.status === 401) {
+        setPwdError('Incorrect password')
+      } else {
+        setPwdError('Server error')
+      }
+    } catch {
+      setPwdError('Network error')
+    } finally {
+      setAuthLoading(false)
     }
   }
 
@@ -245,6 +260,7 @@ function DatabasePage() {
   const openAdminModal = () => {
     setPwdInput('')
     setPwdError(null)
+    setAuthLoading(false)
     setShowPwdModal(true)
   }
 
@@ -1115,8 +1131,8 @@ function DatabasePage() {
             {pwdError && <div className="error-msg" style={{ marginTop: 8 }}>{pwdError}</div>}
             <div className="modal-actions" style={{ marginTop: 16 }}>
               <button className="cancel-btn" onClick={() => setShowPwdModal(false)}>Cancel</button>
-              <button className="process-btn" onClick={handleAdminLogin} disabled={!pwdInput.trim()}>
-                Unlock
+              <button className="process-btn" onClick={handleAdminLogin} disabled={!pwdInput.trim() || authLoading}>
+                {authLoading ? 'Verifying...' : 'Unlock'}
               </button>
             </div>
           </div>

@@ -13,6 +13,8 @@ FRONTEND_DIR="$APP_DIR/frontend"
 SERVICE_FILE="/etc/systemd/system/sfg-toolbox.service"
 PYTHON_BIN="/usr/local/bin/python3.10"
 PYTHON_VERSION="3.10.14"
+OPENSSL_VERSION="1.1.1w"
+OPENSSL_DIR="/usr/local/openssl"
 PORT=8000
 IS_UPDATE=false
 
@@ -37,7 +39,7 @@ fi
 # ──────────────────────────────────────────────
 # 1. Verify source code exists
 # ──────────────────────────────────────────────
-echo "[0/6] Verifying source code..."
+echo "[0/7] Verifying source code..."
 if [ ! -f "$BACKEND_DIR/main.py" ]; then
     echo "  -> Source code NOT found at $BACKEND_DIR"
     echo "  -> Upload files first:"
@@ -53,7 +55,7 @@ echo ""
 # ──────────────────────────────────────────────
 if [ "$IS_UPDATE" = false ]; then
 
-echo "[1/6] Installing system build tools..."
+echo "[1/7] Installing system build tools..."
 yum groupinstall -y "Development Tools"
 yum install -y epel-release
 yum install -y \
@@ -67,17 +69,36 @@ echo ""
 fi  # end IS_UPDATE skip
 
 # ──────────────────────────────────────────────
+# 2.5 OpenSSL 1.1.1 (required by Python 3.10 on CentOS 7)
+# ──────────────────────────────────────────────
+if [ "$IS_UPDATE" = false ] && [ ! -f "$OPENSSL_DIR/lib/libssl.so" ]; then
+echo "[2/7] Compiling OpenSSL $OPENSSL_VERSION (required for Python SSL)..."
+cd /tmp
+if [ ! -f "openssl-$OPENSSL_VERSION.tar.gz" ]; then
+    wget -q "https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz"
+fi
+tar xzf "openssl-$OPENSSL_VERSION.tar.gz"
+cd "openssl-$OPENSSL_VERSION"
+./config --prefix="$OPENSSL_DIR" --openssldir="$OPENSSL_DIR" shared zlib
+make -j"$(nproc)"
+make install
+rm -rf /tmp/openssl-$OPENSSL_VERSION
+echo "  -> OpenSSL $OPENSSL_VERSION installed at $OPENSSL_DIR"
+echo ""
+fi
+
+# ──────────────────────────────────────────────
 # 3. Python 3.10 (source compile)
 # ──────────────────────────────────────────────
 if [ -x "$PYTHON_BIN" ]; then
-    echo "[2/6] Python 3.10 — already installed at $PYTHON_BIN"
+    echo "[3/7] Python 3.10 — already installed at $PYTHON_BIN"
 else
     if [ "$IS_UPDATE" = true ]; then
         echo "ERROR: Python 3.10 not found. Run full deploy first."
         exit 1
     fi
 
-    echo "[2/6] Compiling Python $PYTHON_VERSION from source..."
+    echo "[3/7] Compiling Python $PYTHON_VERSION from source..."
     echo "      (this takes ~5–10 min on 2-core VM)"
 
     cd /tmp
@@ -92,9 +113,9 @@ else
         --enable-shared \
         --with-system-ffi \
         --with-ensurepip=install \
-        --with-openssl=/usr \
-        CPPFLAGS="-I/usr/include/openssl" \
-        LDFLAGS="-Wl,-rpath /usr/local/lib -L/usr/lib64"
+        --with-openssl="$OPENSSL_DIR" \
+        LDFLAGS="-Wl,-rpath /usr/local/lib -Wl,-rpath $OPENSSL_DIR/lib -L$OPENSSL_DIR/lib" \
+        CPPFLAGS="-I$OPENSSL_DIR/include"
 
     make -j"$(nproc)"
     make altinstall
@@ -117,7 +138,7 @@ echo ""
 # ──────────────────────────────────────────────
 if [ "$IS_UPDATE" = false ]; then
 
-echo "[3/6] Installing Node.js 16..."
+echo "[4/7] Installing Node.js 16..."
 if command -v node &> /dev/null; then
     NODE_VER=$(node --version)
     echo "  -> Node.js already installed: $NODE_VER"
@@ -135,7 +156,7 @@ fi  # end IS_UPDATE skip
 # ──────────────────────────────────────────────
 # 5. Python venv & pip deps
 # ──────────────────────────────────────────────
-echo "[4/6] Setting up Python virtual environment..."
+echo "[5/7] Setting up Python virtual environment..."
 cd "$BACKEND_DIR"
 
 if [ ! -d "venv" ]; then
@@ -152,7 +173,7 @@ echo ""
 # ──────────────────────────────────────────────
 # 6. Build frontend
 # ──────────────────────────────────────────────
-echo "[5/6] Building frontend (React + Vite)..."
+echo "[6/7] Building frontend (React + Vite)..."
 cd "$FRONTEND_DIR"
 npm install --silent
 npm run build
@@ -164,7 +185,7 @@ echo ""
 # ──────────────────────────────────────────────
 if [ "$IS_UPDATE" = false ]; then
 
-echo "[6/6] Configuring firewall..."
+echo "[7/7] Configuring firewall..."
 if systemctl is-active --quiet firewalld; then
     firewall-cmd --permanent --add-port=$PORT/tcp 2>/dev/null || true
     firewall-cmd --reload 2>/dev/null || true

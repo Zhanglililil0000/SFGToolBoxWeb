@@ -7,7 +7,7 @@
 # ============================================================
 set -e
 
-APP_DIR="/opt/sfg-toolbox"
+APP_DIR="/www/wwwroot/SFGToolBoxWeb"
 BACKEND_DIR="$APP_DIR/backend"
 FRONTEND_DIR="$APP_DIR/frontend"
 SERVICE_FILE="/etc/systemd/system/sfg-toolbox.service"
@@ -41,7 +41,7 @@ echo "[0/6] Verifying source code..."
 if [ ! -f "$BACKEND_DIR/main.py" ]; then
     echo "  -> Source code NOT found at $BACKEND_DIR"
     echo "  -> Upload files first:"
-    echo "     scp -r ./* root@<SERVER_IP>:/opt/sfg-toolbox/"
+    echo "     scp -r ./* root@<SERVER_IP>:/www/wwwroot/SFGToolBoxWeb/"
     exit 1
 fi
 echo "  -> Source code OK"

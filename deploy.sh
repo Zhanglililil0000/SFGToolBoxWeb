@@ -89,7 +89,6 @@ else
 
     ./configure \
         --prefix=/usr/local \
-        --enable-optimizations \
         --enable-shared \
         --with-system-ffi \
         --with-ensurepip=install \

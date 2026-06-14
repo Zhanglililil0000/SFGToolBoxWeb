@@ -1,7 +1,9 @@
 import sqlite3
 import os
-import shutil
+import io
 from datetime import datetime
+
+from PIL import Image
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sfg_database.db')
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
@@ -97,6 +99,8 @@ def update_record(record_id: int, data: dict):
         conn.close()
         raise ValueError("Record not found")
 
+    dict_row = dict(row)
+
     fields = [
         'name', 'formula', 'normalized_intensity', 'effective_chi2',
         'peak_position', 'peak_width', 'vibrational_mode', 'functional_group',
@@ -111,6 +115,11 @@ def update_record(record_id: int, data: dict):
             updates.append(f"{field} = ?")
             values.append(data[field])
 
+    if 'image_path' in data and dict_row.get('image_path') and data['image_path'] != dict_row['image_path']:
+        old_img = os.path.join(UPLOAD_DIR, dict_row['image_path'])
+        if os.path.exists(old_img):
+            os.remove(old_img)
+
     if updates:
         values.append(record_id)
         conn.execute(f"UPDATE records SET {', '.join(updates)} WHERE id = ?", values)
@@ -123,9 +132,21 @@ def update_record(record_id: int, data: dict):
     return dict(updated)
 
 
+MAX_DIM = 1200
+JPEG_QUALITY = 45
+
+
 def save_image(file_data: bytes, filename: str) -> str:
-    safe_name = f"{int(datetime.now().timestamp())}_{os.path.basename(filename)}"
+    img = Image.open(io.BytesIO(file_data))
+    img = img.convert('L')
+
+    w, h = img.size
+    longest = max(w, h)
+    if longest > MAX_DIM:
+        ratio = MAX_DIM / longest
+        img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+
+    safe_name = f"{int(datetime.now().timestamp())}.jpg"
     path = os.path.join(UPLOAD_DIR, safe_name)
-    with open(path, 'wb') as f:
-        f.write(file_data)
+    img.save(path, 'JPEG', quality=JPEG_QUALITY, optimize=True)
     return safe_name

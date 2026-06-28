@@ -543,7 +543,7 @@ function DatabasePage() {
       ) : (
         <div className="chart-container">
           <ResponsiveContainer width="100%" height={Math.max(400, sortedIntensity.length * 28)}>
-            <BarChart data={sortedIntensity} layout="vertical" margin={{ left: 120 }}>
+            <BarChart data={sortedIntensity} layout="vertical" margin={{ top: 8, right: 16, bottom: 8, left: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis type="number" stroke="var(--color-text-muted)" />
               <YAxis

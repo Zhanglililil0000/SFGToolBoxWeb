@@ -27,6 +27,7 @@ interface SFGRecord {
   laser_energy?: string
   instrument?: string
   reference?: string
+  sample_condition?: string
   image_path?: string
   uploader?: string
   polarization?: string
@@ -55,6 +56,7 @@ function DatabasePage() {
   const [laserEnergy, setLaserEnergy] = useState<string>('')
   const [instrument, setInstrument] = useState<string>('')
   const [reference, setReference] = useState<string>('')
+  const [sampleCondition, setSampleCondition] = useState<string>('')
   const [uploader, setUploader] = useState<string>('')
   const [polarization, setPolarization] = useState<string>('')
 
@@ -70,6 +72,7 @@ function DatabasePage() {
   const [intensityMin, setIntensityMin] = useState<string>('')
   const [intensityMax, setIntensityMax] = useState<string>('')
   const [polarizationFilter, setPolarizationFilter] = useState<Set<string>>(new Set())
+  const [logScale, setLogScale] = useState<boolean>(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
 
   const [detailRecord, setDetailRecord] = useState<SFGRecord | null>(null)
@@ -121,6 +124,7 @@ function DatabasePage() {
     setLaserEnergy('')
     setInstrument('')
     setReference('')
+    setSampleCondition('')
     setUploader('')
     setPolarization('')
     setSelectedImage(null)
@@ -172,6 +176,7 @@ function DatabasePage() {
       if (laserEnergy.trim()) data.laser_energy = laserEnergy.trim()
       if (instrument.trim()) data.instrument = instrument.trim()
       if (reference.trim()) data.reference = reference.trim()
+      if (sampleCondition.trim()) data.sample_condition = sampleCondition.trim()
       if (uploader.trim()) data.uploader = uploader.trim()
       if (polarization.trim()) data.polarization = polarization.trim()
 
@@ -504,6 +509,12 @@ function DatabasePage() {
         >
           Effective χ²
         </button>
+        <button
+          className={`intensity-toggle${logScale ? ' active' : ''}`}
+          onClick={() => setLogScale(!logScale)}
+        >
+          Log Scale
+        </button>
       </div>
 
       <div className="intensity-filter">
@@ -542,10 +553,10 @@ function DatabasePage() {
         </div>
       ) : (
         <div className="chart-container">
-          <ResponsiveContainer width="100%" height={Math.max(400, sortedIntensity.length * 28)}>
+          <ResponsiveContainer width="100%" height={Math.max(400, Math.max(sortedIntensity.length, 1) * 52)}>
             <BarChart data={sortedIntensity} layout="vertical" margin={{ top: 8, right: 16, bottom: 8, left: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis type="number" stroke="var(--color-text-muted)" />
+              <XAxis type="number" scale={logScale ? 'log' : 'auto'} domain={logScale ? ['auto', 'auto'] : undefined} stroke="var(--color-text-muted)" />
               <YAxis
                 type="category"
                 dataKey="name"
@@ -565,7 +576,7 @@ function DatabasePage() {
                   return [isNaN(num) ? '-' : num.toFixed(4), sortMetric === 'normalized_intensity' ? 'Normalized Intensity' : 'Effective χ²']
                 }}
               />
-              <Bar dataKey={sortMetric} radius={[0, 4, 4, 0]} onClick={(data: any) => {
+              <Bar dataKey={sortMetric} radius={[0, 4, 4, 0]} maxBarSize={28} onClick={(data: any) => {
                 const rec = records.find(r => r.name === data.name && r[sortMetric] === data[sortMetric])
                 if (rec) openDetail(rec)
               }}>
@@ -686,6 +697,12 @@ function DatabasePage() {
                     <span>{record.polarization}</span>
                   </span>
                 )}
+                {record.sample_condition && (
+                  <span className="db-card-field">
+                    <span className="db-card-field-label">Sample Condition:</span>
+                    <span>{record.sample_condition}</span>
+                  </span>
+                )}
               </div>
 
             </div>
@@ -724,6 +741,12 @@ function DatabasePage() {
           }}
         >
           Apply
+        </button>
+        <button
+          className={`intensity-toggle${logScale ? ' active' : ''}`}
+          onClick={() => setLogScale(!logScale)}
+        >
+          Log Scale
         </button>
       </div>
 
@@ -764,7 +787,8 @@ function DatabasePage() {
               />
               <YAxis
                 type="number"
-                domain={[Number(yMin) || 0, yMax.trim() ? Number(yMax) : 'auto']}
+                scale={logScale ? 'log' : 'auto'}
+                domain={[Number(yMin) || (logScale ? 0.0001 : 0), yMax.trim() ? Number(yMax) : 'auto']}
                 allowDataOverflow={yMax.trim() !== ''}
                 stroke="var(--color-text-muted)"
                 tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }}
@@ -916,6 +940,7 @@ function DatabasePage() {
                 {renderDetailField('laser_energy', 'Laser Energy', 'text', false)}
                 {renderDetailField('instrument', 'Instrument', 'text', false)}
                 {renderDetailField('reference', 'Reference', 'text', false)}
+                {renderDetailField('sample_condition', 'Sample Condition', 'text', false)}
                 {renderDetailField('uploader', 'Uploader', 'text', false)}
               </div>
 
@@ -1056,6 +1081,14 @@ function DatabasePage() {
                     type="text"
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Sample Condition</label>
+                  <input
+                    type="text"
+                    value={sampleCondition}
+                    onChange={(e) => setSampleCondition(e.target.value)}
                   />
                 </div>
                 <div className="form-group">

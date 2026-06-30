@@ -28,6 +28,7 @@ def init_db():
             laser_energy TEXT,
             instrument TEXT,
             reference TEXT,
+            sample_condition TEXT,
             image_path TEXT,
             uploader TEXT,
             polarization TEXT,
@@ -40,6 +41,10 @@ def init_db():
         pass
     try:
         conn.execute('ALTER TABLE records ADD COLUMN polarization TEXT')
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute('ALTER TABLE records ADD COLUMN sample_condition TEXT')
     except sqlite3.OperationalError:
         pass
     conn.commit()
@@ -60,14 +65,14 @@ def add_record(data: dict):
     conn.execute('''
         INSERT INTO records (name, formula, normalized_intensity, effective_chi2,
             peak_position, peak_width, vibrational_mode, functional_group,
-            vis_angle, ir_angle, laser_energy, instrument, reference, image_path, uploader, polarization, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            vis_angle, ir_angle, laser_energy, instrument, reference, sample_condition, image_path, uploader, polarization, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         data['name'], data.get('formula'), data.get('normalized_intensity'),
         data.get('effective_chi2'), data.get('peak_position'), data.get('peak_width'),
         data.get('vibrational_mode'), data.get('functional_group'),
         data.get('vis_angle'), data.get('ir_angle'), data.get('laser_energy'),
-        data.get('instrument'), data.get('reference'), data.get('image_path'),
+        data.get('instrument'), data.get('reference'), data.get('sample_condition'), data.get('image_path'),
         data.get('uploader'),
         data.get('polarization'),
         now
@@ -104,7 +109,7 @@ def update_record(record_id: int, data: dict):
     fields = [
         'name', 'formula', 'normalized_intensity', 'effective_chi2',
         'peak_position', 'peak_width', 'vibrational_mode', 'functional_group',
-        'vis_angle', 'ir_angle', 'laser_energy', 'instrument', 'reference',
+        'vis_angle', 'ir_angle', 'laser_energy', 'instrument', 'reference', 'sample_condition',
         'uploader', 'polarization', 'image_path'
     ]
 
